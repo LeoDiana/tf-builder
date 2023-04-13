@@ -10,7 +10,7 @@ import { v1 as uuid } from 'uuid';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import * as tf from '@tensorflow/tfjs';
 import toast, { Toaster } from 'react-hot-toast';
-import { ACTIVATIONS, LAYERS, LAYERS_PARAMS, PADDING } from './constans';
+import { ACTIVATIONS, LAYERS, LAYERS_PARAMS, PADDING, TF_LAYERS } from './constans';
 
 
 const reorder = (list, startIndex, endIndex) => {
@@ -76,6 +76,7 @@ function App() {
               : [Number(width)];
           }
           console.log(index, layerParams);
+          model.add(tf.layers[TF_LAYERS[layer.name]](layerParams));
         });
         setOutput('Count Params: ' + model.countParams());
         resolve();
