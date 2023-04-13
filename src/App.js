@@ -3,7 +3,7 @@ import {
   Card,
   CardBody,
   Input,
-  Select,
+  Select
 } from '@chakra-ui/react';
 import { Fragment, useState } from 'react';
 import { v1 as uuid } from 'uuid';
@@ -23,21 +23,26 @@ const reorder = (list, startIndex, endIndex) => {
 
 const is2d = (str) => {
   return str.toLowerCase().includes('2d');
-}
+};
 
 const parseParams = (params, layerName) => {
-  const newParams = {...params};
+  const newParams = { ...params };
 
   Object.keys(newParams).forEach(param => {
     switch (LAYERS_PARAMS[layerName][param]) {
-      case 'number': newParams[param] = Number(newParams[param]); break;
-      case 'number[]': if(typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n)); break;
-      case 'number|[number, number]': if(typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n));
+      case 'number':
+        newParams[param] = Number(newParams[param]);
+        break;
+      case 'number[]':
+        if (typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n));
+        break;
+      case 'number|[number, number]':
+        if (typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n));
     }
-  })
+  });
 
   return newParams;
-}
+};
 
 function App() {
   const [layers, setLayers] = useState([]);
@@ -47,15 +52,15 @@ function App() {
   // const [error, setError] = useState();
   // const [isLoading, setIsLoading] = useState(false);
 
-  // console.log(layers);
+  console.log(layers);
 
   const handleChangeProp = (value, layerId, param) => {
     setLayers(layers => layers.map(
       l => l.id === layerId
-        ? {...l, params: {...l.params, [param]: value}}
+        ? { ...l, params: { ...l.params, [param]: value } }
         : l
-    ))
-  }
+    ));
+  };
 
   const handleCalculate = () => {
     toast.promise(new Promise((resolve, reject) => {
@@ -71,7 +76,7 @@ function App() {
               : [Number(width)];
           }
           console.log(index, layerParams);
-        })
+        });
         setOutput('Count Params: ' + model.countParams());
         resolve();
       } catch (err) {
@@ -80,9 +85,9 @@ function App() {
     }), {
       loading: 'Loading',
       success: 'See output',
-      error: (err) => err,
+      error: (err) => err
     });
-  }
+  };
 
   const inputField = (type, layer, param) => {
     switch (type) {
@@ -90,18 +95,20 @@ function App() {
         return (
           <Select
             onChange={(e) => handleChangeProp(e.target.value, layer.id, param)}
+            defaultValue={ACTIVATIONS[0]}
             placeholder="Select activation">
             {ACTIVATIONS.map((activation, index) =>
-              <option selected={index === 0} key={activation} value={activation}>{activation}</option>
+              <option key={activation} value={activation}>{activation}</option>
             )}
           </Select>);
       case 'padding':
         return (
           <Select
             onChange={(e) => handleChangeProp(e.target.value, layer.id, param)}
+            defaultValue={PADDING[0]}
             placeholder="Select padding">
             {PADDING.map((padding, index) =>
-              <option selected={index === 0} key={padding} value={padding}>{padding}</option>
+              <option key={padding} value={padding}>{padding}</option>
             )}
           </Select>
         );
@@ -110,7 +117,7 @@ function App() {
           onChange={(e) => handleChangeProp(e.target.value, layer.id, param)}
           placeholder={type} />);
     }
-  }
+  };
 
   const onDragEnd = (result) => {
     // dropped outside the list
@@ -125,25 +132,30 @@ function App() {
     );
 
     setLayers(items);
-  }
+  };
 
   const handleAddLayer = (layer) => setLayers(layers => [...layers, {
     id: uuid(),
     name: layer,
     params: Object.keys(LAYERS_PARAMS[layer]).reduce((acc, param) => {
       switch (param) {
-        case 'activation': acc[param] = ACTIVATIONS[0]; break;
-        case 'padding': acc[param] = PADDING[0]; break;
-        default: acc[param] = undefined;
+        case 'activation':
+          acc[param] = ACTIVATIONS[0];
+          break;
+        case 'padding':
+          acc[param] = PADDING[0];
+          break;
+        default:
+          acc[param] = undefined;
       }
       return acc;
     }, {})
-  }])
+  }]);
 
   return (
     <div className="app-container">
       <Toaster />
-      <h1 className='title'>TenzorFlow Calculator</h1>
+      <h1 className="title">TenzorFlow Calculator</h1>
       <div className="buttons-container">
         <div>Add layer:</div>
         {LAYERS.map(layer =>
@@ -153,61 +165,61 @@ function App() {
             {layer}
           </button>)}
       </div>
-      <div className='input-shape'>
-        <p className='input-label'>Input shape:</p>
+      <div className="input-shape">
+        <p className="input-label">Input shape:</p>
         <Input
           onChange={(e) => {
             setWidth(e.target.value);
           }}
-          placeholder='Input shape' />
-        <p className='input-label'>Number of channels:</p>
+          placeholder="Input shape" />
+        <p className="input-label">Number of channels:</p>
         <Input
           isDisabled={layers.length ? !is2d(layers[0].name) : true}
           onChange={(e) => {
             setChannels(e.target.value);
           }}
-          placeholder='Number of channels' />
+          placeholder="Number of channels" />
       </div>
 
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="droppable" direction="horizontal">
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                className='layers-container'
-                {...provided.droppableProps}
-              >
-                {layers.map((layer, index) => (
-                  <Draggable key={layer.id} draggableId={layer.id} index={index}>
-                    {(provided, snapshot) => (
-                      <Card key={layer.id} width={'300px'} className="layer-card"
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                      >
-                        <h3 className='card-header'>{layer.name}</h3>
-                        <CardBody>
-                          {Object.keys(layer).length && Object.keys(layer.params).map(param =>
-                            (
-                              <Fragment key={param}>
-                                <p className='input-label'>{param}:</p>
-                                {inputField(param, layer, param)}
-                              </Fragment>
-                            )
-                          )}
-                        </CardBody>
-                      </Card>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="droppable" direction="horizontal">
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              className="layers-container"
+              {...provided.droppableProps}
+            >
+              {layers.map((layer, index) => (
+                <Draggable key={layer.id} draggableId={layer.id} index={index}>
+                  {(provided, snapshot) => (
+                    <Card key={layer.id} width={'300px'} className="layer-card"
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                    >
+                      <h3 className="card-header">{layer.name}</h3>
+                      <CardBody>
+                        {Object.keys(layer).length && Object.keys(layer.params).map(param =>
+                          (
+                            <Fragment key={param}>
+                              <p className="input-label">{param}:</p>
+                              {inputField(param, layer, param)}
+                            </Fragment>
+                          )
+                        )}
+                      </CardBody>
+                    </Card>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       <button
-        className='calc-button'
+        className="calc-button"
         onClick={handleCalculate}
       >
         Calculate
@@ -215,7 +227,7 @@ function App() {
 
       <div className="output-container">
         Output:
-        <br/>
+        <br />
         {output}
       </div>
     </div>
