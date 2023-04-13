@@ -1,38 +1,81 @@
-.App {
-  text-align: center;
+.app-container {
+    padding: 4rem 10rem;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.layers-container {
+    background-color: #f7f7f7;
+    border-radius: 1rem;
+    width: 100%;
+    height: 600px;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    display: flex;
+    overflow-x: auto;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.output-container {
+    background-color: #2d2d2d;
+    color: white;
+    padding: 2rem;
+    border-radius: 1rem;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.layer-card {
+    flex-shrink: 0;
+    margin: 0 0.5rem;
 }
 
-.App-link {
-  color: #61dafb;
+.layer-card p {
+    margin-top: 0.5rem;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.add-button {
+    background-color: #2d2d2d;
+    color: white;
+    padding: 0.3rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: bold;
+}
+
+.buttons-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    flex-wrap: wrap;
+}
+
+.input-label {
+    text-transform: capitalize;
+}
+
+.card-header {
+    padding: 1rem 1rem 0;
+    font-weight: bold;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.input-shape {
+    display: flex;
+    white-space: nowrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.title {
+    font-weight: 800;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+}
+
+.calc-button {
+    background-color: #4b4b4b;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: bold;
+    width: 100%;
+    margin-bottom: 2rem;
 }
