@@ -56,6 +56,65 @@ function App() {
 
   console.log(layers);
 
+  const makeTFModel = () => {
+    const model = tf.sequential();
+    layers.forEach((layer, index) => {
+      const layerParams = { ...parseParams(layer.params, layer.name) };
+      if (index === 0) {
+        layerParams.inputShape = is2d(layer.name)
+          ? [Number(width), Number(width), Number(channels)]
+          : [Number(width)];
+      }
+      model.add(tf.layers[TF_LAYERS[layer.name]](layerParams));
+    });
+    return model;
+  }
+
+  const makeTSPModel = () => {
+    const modelTSP = new TSP.models.Sequential( canvas );
+
+    if(!is2d(layers[0].name)) {
+      modelTSP.add(new TSP.layers.Input1d({shape: [Number(width)]}));
+    } else {
+      if (Number(channels) === 2) {
+        modelTSP.add(new TSP.layers.GreyscaleInput({shape: [Number(width), Number(width)]}));
+      } else { // Number(channels) === 3
+        modelTSP.add(new TSP.layers.RGBInput({shape: [Number(width), Number(width), 3]}));
+      }
+    }
+    layers.forEach((layer, index) => {
+      modelTSP.add(new TSP.layers[TSP_LAYERS[layer.name]]());
+    });
+
+    // modelTSP.add(new TSP.layers.Output1d({
+    //   outputs: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    // }) )
+
+    return modelTSP;
+  }
+
+  const handleAddLayer = (layer) => setLayers(layers => [...layers, {
+    id: uuid(),
+    name: layer,
+    params: Object.keys(LAYERS_PARAMS[layer]).reduce((acc, param) => {
+      switch (param) {
+        case 'activation':
+          acc[param] = ACTIVATIONS[0];
+          break;
+        case 'padding':
+          acc[param] = PADDING[0];
+          break;
+        default:
+          acc[param] = undefined;
+      }
+      return acc;
+    }, {})
+  }]);
+
+  const handleDeleteLayer = (layerId) => {
+    setLayers(layers => layers.filter(l => l.id !== layerId))
+  }
+
   const handleChangeProp = (value, layerId, param) => {
     setLayers(layers => layers.map(
       l => l.id === layerId
@@ -68,36 +127,9 @@ function App() {
     toast.promise(new Promise((resolve, reject) => {
       try {
         console.log('LAYERS:');
-
-        const model = tf.sequential();
-        const modelTSP = new TSP.models.Sequential( canvas );
-
-        if(!is2d(layers[0].name)) {
-          modelTSP.add(new TSP.layers.Input1d({shape: [Number(width)]}));
-        } else {
-          if (Number(channels) === 2) {
-            modelTSP.add(new TSP.layers.GreyscaleInput({shape: [Number(width), Number(width)]}));
-          } else { // Number(channels) === 3
-            modelTSP.add(new TSP.layers.RGBInput({shape: [Number(width), Number(width), 3]}));
-          }
-        }
-
-        layers.forEach((layer, index) => {
-          const layerParams = { ...parseParams(layer.params, layer.name) };
-          if (index === 0) {
-            layerParams.inputShape = is2d(layer.name)
-              ? [Number(width), Number(width), Number(channels)]
-              : [Number(width)];
-          }
-          console.log(index, layerParams);
-          model.add(tf.layers[TF_LAYERS[layer.name]](layerParams));
-          console.log(TSP_LAYERS[layer.name]);
-          modelTSP.add(new TSP.layers[TSP_LAYERS[layer.name]]());
-        });
+        const model = makeTFModel();
         setOutput('Count Params: ' + model.countParams());
-        // modelTSP.add(new TSP.layers.Output1d({
-        //   outputs: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        // }) )
+        const modelTSP = makeTSPModel();
         modelTSP.init();
         resolve();
       } catch (err) {
@@ -111,12 +143,12 @@ function App() {
     });
   };
 
-  const inputField = (type, layer, param) => {
+  const inputField = (type, layer) => {
     switch (type) {
       case 'activation':
         return (
           <Select
-            onChange={(e) => handleChangeProp(e.target.value, layer.id, param)}
+            onChange={(e) => handleChangeProp(e.target.value, layer.id, type)}
             defaultValue={ACTIVATIONS[0]}
             placeholder="Select activation">
             {ACTIVATIONS.map((activation, index) =>
@@ -126,7 +158,7 @@ function App() {
       case 'padding':
         return (
           <Select
-            onChange={(e) => handleChangeProp(e.target.value, layer.id, param)}
+            onChange={(e) => handleChangeProp(e.target.value, layer.id, type)}
             defaultValue={PADDING[0]}
             placeholder="Select padding">
             {PADDING.map((padding, index) =>
@@ -136,7 +168,7 @@ function App() {
         );
       default:
         return (<Input
-          onChange={(e) => handleChangeProp(e.target.value, layer.id, param)}
+          onChange={(e) => handleChangeProp(e.target.value, layer.id, type)}
           placeholder={type} />);
     }
   };
@@ -156,23 +188,6 @@ function App() {
     setLayers(items);
   };
 
-  const handleAddLayer = (layer) => setLayers(layers => [...layers, {
-    id: uuid(),
-    name: layer,
-    params: Object.keys(LAYERS_PARAMS[layer]).reduce((acc, param) => {
-      switch (param) {
-        case 'activation':
-          acc[param] = ACTIVATIONS[0];
-          break;
-        case 'padding':
-          acc[param] = PADDING[0];
-          break;
-        default:
-          acc[param] = undefined;
-      }
-      return acc;
-    }, {})
-  }]);
 
   return (
     <div className="app-container">
@@ -219,14 +234,14 @@ function App() {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                     >
-                      <CloseButton className='card-delete' onClick={() => setLayers(layers => layers.filter(l => l.id !== layer.id))}/>
+                      <CloseButton className='card-delete' onClick={() => handleDeleteLayer(layer.id)}/>
                       <h3 className="card-header">{layer.name}</h3>
                       <CardBody>
                         {Object.keys(layer).length && Object.keys(layer.params).map(param =>
                           (
                             <Fragment key={param}>
                               <p className="input-label">{param}:</p>
-                              {inputField(param, layer, param)}
+                              {inputField(param, layer)}
                             </Fragment>
                           )
                         )}
