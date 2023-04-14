@@ -11,6 +11,16 @@ export const TF_LAYERS = {
   GlobalAveragePooling2D: 'globalAveragePooling2d'
 }
 
+export const TSP_LAYERS = {
+  Dense: 'Dense',
+  Conv2D: 'Conv2d',
+  Flatten: 'Flatten',
+  MaxPooling2D: 'Pooling2d',
+  AveragePooling2D: 'Pooling2d',
+  GlobalMaxPooling2D: 'Pooling2d',
+  GlobalAveragePooling2D: 'Pooling2d'
+}
+
 export const PADDING = ['valid', 'same', 'causal'];
 
 export const LAYERS_PARAMS = {

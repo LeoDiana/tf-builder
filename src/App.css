@@ -1,4 +1,24 @@
-.app-container {
+
+
+#tsp-container {
+    margin-top: 2rem;
+}
+
+#tsp-canvas {
+    width: 100%;
+    height: 500px;
+    margin-top: 0.5rem;
+    background: black;
+    border-radius: 1rem;
+}
+
+h3 {
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+
+body {
     padding: 4rem 10rem;
 }
 
@@ -78,4 +98,9 @@
     font-weight: bold;
     width: 100%;
     margin-bottom: 2rem;
+}
+
+.card-delete {
+    position: absolute;
+    right: 0;
 }

@@ -1,7 +1,7 @@
 import './App.css';
 import {
   Card,
-  CardBody,
+  CardBody, CloseButton,
   Input,
   Select
 } from '@chakra-ui/react';
@@ -10,8 +10,10 @@ import { v1 as uuid } from 'uuid';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import * as tf from '@tensorflow/tfjs';
 import toast, { Toaster } from 'react-hot-toast';
-import { ACTIVATIONS, LAYERS, LAYERS_PARAMS, PADDING, TF_LAYERS } from './constans';
+import { ACTIVATIONS, LAYERS, LAYERS_PARAMS, PADDING, TF_LAYERS, TSP_LAYERS } from './constants';
+import * as TSP from 'tensorspace';
 
+const canvas = document.getElementById('tsp-canvas');
 
 const reorder = (list, startIndex, endIndex) => {
   const result = Array.from(list);
@@ -68,6 +70,18 @@ function App() {
         console.log('LAYERS:');
 
         const model = tf.sequential();
+        const modelTSP = new TSP.models.Sequential( canvas );
+
+        if(!is2d(layers[0].name)) {
+          modelTSP.add(new TSP.layers.Input1d({shape: [Number(width)]}));
+        } else {
+          if (Number(channels) === 2) {
+            modelTSP.add(new TSP.layers.GreyscaleInput({shape: [Number(width), Number(width)]}));
+          } else { // Number(channels) === 3
+            modelTSP.add(new TSP.layers.RGBInput({shape: [Number(width), Number(width), 3]}));
+          }
+        }
+
         layers.forEach((layer, index) => {
           const layerParams = { ...parseParams(layer.params, layer.name) };
           if (index === 0) {
@@ -77,10 +91,17 @@ function App() {
           }
           console.log(index, layerParams);
           model.add(tf.layers[TF_LAYERS[layer.name]](layerParams));
+          console.log(TSP_LAYERS[layer.name]);
+          modelTSP.add(new TSP.layers[TSP_LAYERS[layer.name]]());
         });
         setOutput('Count Params: ' + model.countParams());
+        // modelTSP.add(new TSP.layers.Output1d({
+        //   outputs: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+        // }) )
+        modelTSP.init();
         resolve();
       } catch (err) {
+        console.log(err);
         reject(err.message);
       }
     }), {
@@ -198,6 +219,7 @@ function App() {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                     >
+                      <CloseButton className='card-delete' onClick={() => setLayers(layers => layers.filter(l => l.id !== layer.id))}/>
                       <h3 className="card-header">{layer.name}</h3>
                       <CardBody>
                         {Object.keys(layer).length && Object.keys(layer.params).map(param =>
