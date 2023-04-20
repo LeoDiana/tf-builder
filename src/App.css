@@ -1,6 +1,7 @@
 :root {
     --corners-lg: 1rem;
     --corners-md: 0.5rem;
+    --orange: #ff6f00;
 }
 
 #tsp-container {
@@ -13,6 +14,7 @@
     margin-top: 0.5rem;
     background: black;
     border-radius: var(--corners-lg);
+    overflow: hidden;
 }
 
 h3 {
@@ -29,7 +31,7 @@ body {
     background-color: #f7f7f7;
     border-radius: var(--corners-lg);
     width: 100%;
-    height: 600px;
+    height: 500px;
     margin: 2rem 0;
     padding: 1.5rem;
     display: flex;
@@ -41,6 +43,7 @@ body {
     color: white;
     padding: 2rem;
     border-radius: var(--corners-lg);
+    margin-top: 2rem;
 }
 
 .layer-card {
@@ -93,14 +96,18 @@ body {
     margin-bottom: 1.5rem;
 }
 
-.calc-button {
-    background-color: #4b4b4b;
+.calc-button, .download-button {
+    background-color: var(--orange);
     color: white;
-    padding: 1rem 2rem;
+    padding: 0.5rem 2rem;
     border-radius: var(--corners-md);
     font-weight: bold;
     width: 100%;
-    margin-bottom: 2rem;
+    height: 100%;
+}
+
+.download-button {
+    background-color: #494949;
 }
 
 .card-delete {

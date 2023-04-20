@@ -13,8 +13,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import { ACTIVATIONS, LAYERS, LAYERS_PARAMS, PADDING, TF_LAYERS, TSP_LAYERS } from './constants';
 import * as TSP from 'tensorspace';
 
-const canvas = document.getElementById('tsp-canvas');
-
 const reorder = (list, startIndex, endIndex) => {
   const result = Array.from(list);
   const [removed] = result.splice(startIndex, 1);
@@ -40,6 +38,8 @@ const parseParams = (params, layerName) => {
         break;
       case 'number|[number, number]':
         if (typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n));
+        break;
+      default: throw new Error('Not implemented!')
     }
   });
 
@@ -51,10 +51,6 @@ function App() {
   const [width, setWidth] = useState(0);
   const [channels, setChannels] = useState(0);
   const [output, setOutput] = useState();
-  // const [error, setError] = useState();
-  // const [isLoading, setIsLoading] = useState(false);
-
-  console.log(layers);
 
   const makeTFModel = () => {
     const model = tf.sequential();
@@ -71,6 +67,11 @@ function App() {
   }
 
   const makeTSPModel = () => {
+    const canvas = document.getElementById('tsp-canvas');
+    if(canvas && canvas.firstChild) {
+      canvas.removeChild(canvas.firstChild);
+    }
+
     const modelTSP = new TSP.models.Sequential( canvas );
 
     if(!is2d(layers[0].name)) {
@@ -82,13 +83,13 @@ function App() {
         modelTSP.add(new TSP.layers.RGBInput({shape: [Number(width), Number(width), 3]}));
       }
     }
-    layers.forEach((layer, index) => {
-      modelTSP.add(new TSP.layers[TSP_LAYERS[layer.name]]());
-    });
 
-    // modelTSP.add(new TSP.layers.Output1d({
-    //   outputs: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    // }) )
+    layers.forEach((layer) => {
+      modelTSP.add(new TSP.layers[TSP_LAYERS[layer.name]]({
+        name: layer.name,
+        ...parseParams(layer.params, layer.name)
+      }));
+    });
 
     return modelTSP;
   }
@@ -137,10 +138,28 @@ function App() {
         reject(err.message);
       }
     }), {
-      loading: 'Loading',
+      loading: 'Loading...',
       success: 'See output',
       error: (err) => err
     });
+  };
+
+  const handleDownload = async () => {
+    toast.promise(new Promise((resolve, reject) => {
+      try {
+        const model = makeTFModel();
+        model.save('downloads://my-model');
+        resolve();
+      } catch (err) {
+        console.log(err);
+        reject(err.message);
+      }
+    }), {
+      loading: 'Saving...',
+      success: 'Saved in Downloads',
+      error: (err) => err
+    });
+
   };
 
   const inputField = (type, layer) => {
@@ -151,7 +170,7 @@ function App() {
             onChange={(e) => handleChangeProp(e.target.value, layer.id, type)}
             defaultValue={ACTIVATIONS[0]}
             placeholder="Select activation">
-            {ACTIVATIONS.map((activation, index) =>
+            {ACTIVATIONS.map((activation) =>
               <option key={activation} value={activation}>{activation}</option>
             )}
           </Select>);
@@ -161,7 +180,7 @@ function App() {
             onChange={(e) => handleChangeProp(e.target.value, layer.id, type)}
             defaultValue={PADDING[0]}
             placeholder="Select padding">
-            {PADDING.map((padding, index) =>
+            {PADDING.map((padding) =>
               <option key={padding} value={padding}>{padding}</option>
             )}
           </Select>
@@ -216,11 +235,23 @@ function App() {
             setChannels(e.target.value);
           }}
           placeholder="Number of channels" />
+        <button
+          className="calc-button"
+          onClick={handleCalculate}
+        >
+          Calculate
+        </button>
+        <button
+          className="download-button"
+          onClick={handleDownload}
+        >
+          Download
+        </button>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="droppable" direction="horizontal">
-          {(provided, snapshot) => (
+          {(provided) => (
             <div
               ref={provided.innerRef}
               className="layers-container"
@@ -228,7 +259,7 @@ function App() {
             >
               {layers.map((layer, index) => (
                 <Draggable key={layer.id} draggableId={layer.id} index={index}>
-                  {(provided, snapshot) => (
+                  {(provided) => (
                     <Card key={layer.id} width={'300px'} className="layer-card"
                           ref={provided.innerRef}
                           {...provided.draggableProps}
@@ -256,18 +287,16 @@ function App() {
         </Droppable>
       </DragDropContext>
 
-      <button
-        className="calc-button"
-        onClick={handleCalculate}
-      >
-        Calculate
-      </button>
+      <div id="tsp-container">
+        <h3>Model Visualisation: </h3>
+        <div id="tsp-canvas"></div>
+      </div>
 
-      <div className="output-container">
+      {output && <div className="output-container">
         Output:
         <br />
         {output}
-      </div>
+      </div>}
     </div>
   );
 }
