@@ -39,10 +39,8 @@ const parseParams = (params, layerName) => {
       case 'number|[number, number]':
         if (typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n));
         break;
-      default: throw new Error('Not implemented!')
     }
   });
-
   return newParams;
 };
 
@@ -61,6 +59,7 @@ function App() {
           ? [Number(width), Number(width), Number(channels)]
           : [Number(width)];
       }
+      console.log(layerParams);
       model.add(tf.layers[TF_LAYERS[layer.name]](layerParams));
     });
     return model;
@@ -211,7 +210,7 @@ function App() {
   return (
     <div className="app-container">
       <Toaster />
-      <h1 className="title">TenzorFlow Calculator</h1>
+      <h1 className="title">Neural network calculator</h1>
       <div className="buttons-container">
         <div>Add layer:</div>
         {LAYERS.map(layer =>
