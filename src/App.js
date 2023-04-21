@@ -37,7 +37,12 @@ const parseParams = (params, layerName) => {
         if (typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n));
         break;
       case 'number|[number, number]':
-        if (typeof newParams[param] === 'string') newParams[param] = newParams[param].split(',').map(n => Number(n));
+        if (typeof newParams[param] === 'string') {
+          newParams[param] = newParams[param].split(',').map(n => Number(n));
+          if(newParams[param].length === 1 && param === 'poolSize') {
+            newParams[param] = [newParams[param], newParams[param]]
+          }
+        };
         break;
     }
   });
@@ -60,8 +65,10 @@ function App() {
           : [Number(width)];
       }
       console.log(layerParams);
+
       model.add(tf.layers[TF_LAYERS[layer.name]](layerParams));
     });
+    model.summary();
     return model;
   }
 
