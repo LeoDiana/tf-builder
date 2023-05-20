@@ -71,6 +71,69 @@ function App() {
     model.summary();
     return model;
   }
+  
+  const computeFlops = (model) => {
+      const layers = model.layers;
+      let totalFlops = 0;
+      
+      for (const layer of layers) {
+          const layerConfig = layer.getConfig();
+
+          // Check the layer type
+          if (layerConfig['class_name'] === 'Conv2D') {
+            const filters = layerConfig['config']['filters'];
+            const kernelSize = layerConfig['config']['kernel_size'];
+            const strides = layerConfig['config']['strides'];
+            const inputShape = layer.input.shape;
+            const outputShape = layer.output.shape;
+
+            // Calculate FLOPS for convolutional layers
+            const flops = 2 * kernelSize[0] * kernelSize[1] * inputShape[3] * outputShape[3] *
+              outputShape[1] * outputShape[2] / (strides[0] * strides[1]);
+
+            totalFlops += flops;
+          } else if (layerConfig['class_name'] === 'Dense') {
+            const inputSize = layer.input.shape[1];
+            const outputSize = layerConfig['config']['units'];
+
+            // Calculate FLOPS for fully connected (dense) layers
+            const flops = 2 * inputSize * outputSize;
+
+            totalFlops += flops;
+            }
+          else if (layerConfig['class_name'].includes('Pooling')) {
+              const inputShape = layer.input.shape;
+              const outputShape = layer.output.shape;
+              const flops = inputShape[1] * inputShape[2] * inputShape[3] * outputShape[1] * outputShape[2] / 4;
+              totalFlops += flops;
+
+          }
+    }
+      return totalFlops;
+  }
+  
+  const calcReceptiveField = (model) => {
+      let receptiveFieldSize = 1; // Initialize the receptive field size
+
+        for (const layer of model.layers) {
+          const layerConfig = layer.getConfig();
+
+          // Calculate the receptive field based on the layer type
+          if (layerConfig['class_name'] === 'Conv2D' || layerConfig['class_name'].includes('Pooling2D')) 
+          {
+            const kernelSize = layerConfig['config']['pool_size'];
+            const strides = layerConfig['config']['strides'] || 1;
+            const dilationRate = layerConfig['config']['dilation_rate'] || 1;
+
+            receptiveFieldSize += (kernelSize[0] - 1) * dilationRate + 1; // Update receptive field size
+
+            if (strides[0] > 1 || strides[1] > 1) {
+              receptiveFieldSize += (strides[0] - 1) * dilationRate; // Account for stride
+            }
+        }
+        }
+    return receptiveFieldSize;
+  }
 
   const makeTSPModel = () => {
     const canvas = document.getElementById('tsp-canvas');
@@ -135,7 +198,14 @@ function App() {
       try {
         console.log('LAYERS:');
         const model = makeTFModel();
-        setOutput('Count Params: ' + model.countParams());
+        const receptiveField = calcReceptiveField(model);
+        if (receptiveField!==1) {
+            setOutput('Count Params: ' + model.countParams()+'\nTotal FLOPS: '+computeFlops(model)+'\nReceptive field: '+receptiveField);
+
+        }
+        else {
+            setOutput('Count Params: ' + model.countParams()+'\nTotal FLOPS: '+computeFlops(model));
+        }
         const modelTSP = makeTSPModel();
         modelTSP.init();
         resolve();
