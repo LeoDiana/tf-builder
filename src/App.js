@@ -79,11 +79,18 @@ function App() {
       for (const layer of layers) {
           const layerConfig = layer.getConfig();
 
+
+        console.log(layer.constructor.name);
+        console.log(layer);
+        console.log(layerConfig);
+
           // Check the layer type
-          if (layerConfig['class_name'] === 'Conv2D') {
-            const filters = layerConfig['config']['filters'];
-            const kernelSize = layerConfig['config']['kernel_size'];
-            const strides = layerConfig['config']['strides'];
+        if (layer.constructor.name === 'Conv2D') {
+
+
+          const filters = layerConfig.filters;
+          const kernelSize = layerConfig.kernelSize;
+          const strides = layerConfig.strides;
             const inputShape = layer.input.shape;
             const outputShape = layer.output.shape;
 
@@ -92,16 +99,18 @@ function App() {
               outputShape[1] * outputShape[2] / (strides[0] * strides[1]);
 
             totalFlops += flops;
-          } else if (layerConfig['class_name'] === 'Dense') {
+        } else if (layer.constructor.name === 'Dense') {
+
+
             const inputSize = layer.input.shape[1];
-            const outputSize = layerConfig['config']['units'];
+          const outputSize = layerConfig.units;
 
             // Calculate FLOPS for fully connected (dense) layers
             const flops = 2 * inputSize * outputSize;
 
             totalFlops += flops;
             }
-          else if (layerConfig['class_name'].includes('Pooling')) {
+        else if (layer.constructor.name.includes('Pooling')) {
               const inputShape = layer.input.shape;
               const outputShape = layer.output.shape;
               const flops = inputShape[1] * inputShape[2] * inputShape[3] * outputShape[1] * outputShape[2] / 4;
@@ -113,13 +122,21 @@ function App() {
   }
   
   const calcReceptiveField = (model) => {
+    const layerNames = { "conv2d_Conv2D6": 'Conv2D', }
+
+
       let receptiveFieldSize = 1; // Initialize the receptive field size
 
         for (const layer of model.layers) {
+          console.log('layer', layer.constructor.name, layer)
           const layerConfig = layer.getConfig();
 
+          // console.log(layer instanceof tf.conv2d)
+
           // Calculate the receptive field based on the layer type
-          if (layerConfig['class_name'] === 'Conv2D' || layerConfig['class_name'].includes('Pooling2D')) 
+          console.log(layerConfig);
+          //layerNames[layerConfig.name]
+          if (layerConfig.constructor.name === 'Conv2D' || layerConfig.constructor.name.includes('Pooling2D')) 
           {
             const kernelSize = layerConfig['config']['pool_size'];
             const strides = layerConfig['config']['strides'] || 1;
