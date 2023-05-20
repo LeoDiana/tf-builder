@@ -74,51 +74,33 @@ function App() {
   
   const computeFlops = (model) => {
       const layers = model.layers;
-      let totalFlops = 0;
+      const inputShape = model.inputs[0].shape;
+      const dummyInput = tf.zeros(inputShape);
       
-      for (const layer of layers) {
-          const layerConfig = layer.getConfig();
+      const warmupIterations = 10;
+      const totalIterations = 100;
 
+        // Warmup
+      for (let i = 0; i < warmupIterations; i++) {
+           model.predict(dummyInput);
+       }
+      
+      console.time('flops');
+      
+      // Measure inference time
+      for (let i = 0; i < totalIterations; i++) {
+          model.predict(dummyInput);
+        }
+      
+      console.timeEnd('flops');
+      
+      const opsPerIteration = model.countParams();
+      const totalTime = console.timeLog('flops');
 
-        console.log(layer.constructor.name);
-        console.log(layer);
-        console.log(layerConfig);
+      const flops = (opsPerIteration * totalIterations) / (totalTime / 1000);
 
-          // Check the layer type
-        if (layer.constructor.name === 'Conv2D') {
-
-
-          const filters = layerConfig.filters;
-          const kernelSize = layerConfig.kernelSize;
-          const strides = layerConfig.strides;
-            const inputShape = layer.input.shape;
-            const outputShape = layer.output.shape;
-
-            // Calculate FLOPS for convolutional layers
-            const flops = 2 * kernelSize[0] * kernelSize[1] * inputShape[3] * outputShape[3] *
-              outputShape[1] * outputShape[2] / (strides[0] * strides[1]);
-
-            totalFlops += flops;
-        } else if (layer.constructor.name === 'Dense') {
-
-
-            const inputSize = layer.input.shape[1];
-          const outputSize = layerConfig.units;
-
-            // Calculate FLOPS for fully connected (dense) layers
-            const flops = 2 * inputSize * outputSize;
-
-            totalFlops += flops;
-            }
-        else if (layer.constructor.name.includes('Pooling')) {
-              const inputShape = layer.input.shape;
-              const outputShape = layer.output.shape;
-              const flops = inputShape[1] * inputShape[2] * inputShape[3] * outputShape[1] * outputShape[2] / 4;
-              totalFlops += flops;
-
-          }
     }
-      return totalFlops;
+      return flops;
   }
   
   const calcReceptiveField = (model) => {
@@ -136,11 +118,11 @@ function App() {
           // Calculate the receptive field based on the layer type
           console.log(layerConfig);
           //layerNames[layerConfig.name]
-          if (layerConfig.constructor.name === 'Conv2D' || layerConfig.constructor.name.includes('Pooling2D')) 
+          if (layer.constructor.name === 'Conv2D' || layer.constructor.name.includes('Pooling2D')) 
           {
-            const kernelSize = layerConfig['config']['pool_size'];
-            const strides = layerConfig['config']['strides'] || 1;
-            const dilationRate = layerConfig['config']['dilation_rate'] || 1;
+            const kernelSize = layerConfig['pool_size'];
+            const strides = layerConfig['strides'] || 1;
+            const dilationRate = layerConfig['dilation_rate'] || 1;
 
             receptiveFieldSize += (kernelSize[0] - 1) * dilationRate + 1; // Update receptive field size
 
@@ -217,11 +199,11 @@ function App() {
         const model = makeTFModel();
         const receptiveField = calcReceptiveField(model);
         if (receptiveField!==1) {
-            setOutput('Count Params: ' + model.countParams()+'\nTotal FLOPS: '+computeFlops(model)+'\nReceptive field: '+receptiveField);
+            setOutput('Count Params: ' + model.countParams()+'\n'+'Total FLOPS: '+computeFlops(model)+'\n'+'Receptive field: '+receptiveField);
 
         }
         else {
-            setOutput('Count Params: ' + model.countParams()+'\nTotal FLOPS: '+computeFlops(model));
+            setOutput('Count Params: ' + model.countParams()+'\n'+'Total FLOPS: '+computeFlops(model));
         }
         const modelTSP = makeTSPModel();
         modelTSP.init();
