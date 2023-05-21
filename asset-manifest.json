@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/tf-builder/static/css/main.59ae2d7a.css",
+    "main.js": "/tf-builder/static/js/main.bba0ef9a.js",
+    "static/js/787.2436326e.chunk.js": "/tf-builder/static/js/787.2436326e.chunk.js",
+    "index.html": "/tf-builder/index.html",
+    "main.59ae2d7a.css.map": "/tf-builder/static/css/main.59ae2d7a.css.map",
+    "main.bba0ef9a.js.map": "/tf-builder/static/js/main.bba0ef9a.js.map",
+    "787.2436326e.chunk.js.map": "/tf-builder/static/js/787.2436326e.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.59ae2d7a.css",
+    "static/js/main.bba0ef9a.js"
+  ]
+}
