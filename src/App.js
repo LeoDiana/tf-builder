@@ -64,7 +64,6 @@ function App() {
           ? [Number(width), Number(width), Number(channels)]
           : [Number(width)];
       }
-      console.log(layerParams);
 
       model.add(tf.layers[TF_LAYERS[layer.name]](layerParams));
     });
@@ -74,55 +73,45 @@ function App() {
   
   const computeFlops = (model) => {
       const layers = model.layers;
-      const inputShape = model.inputs[0].shape;
-      const dummyInput = tf.zeros(inputShape);
+    const batchSize = 1;
+
+    const inputShape = model.inputs[0].shape.slice(1);
+    const dummyInput = tf.zeros([batchSize, ...inputShape]);
       
       const warmupIterations = 10;
       const totalIterations = 100;
 
-        // Warmup
       for (let i = 0; i < warmupIterations; i++) {
            model.predict(dummyInput);
        }
       
-      console.time('flops');
-      
-      // Measure inference time
+    const start = Date.now();
+
       for (let i = 0; i < totalIterations; i++) {
           model.predict(dummyInput);
         }
-      
-      console.timeEnd('flops');
-      
+
+    const end = Date.now();
       const opsPerIteration = model.countParams();
-      const totalTime = console.timeLog('flops');
+
+    const totalTime = (end - start);
 
       const flops = (opsPerIteration * totalIterations) / (totalTime / 1000);
 
-    }
-      return flops;
+    return Math.floor(flops);
   }
   
   const calcReceptiveField = (model) => {
-    const layerNames = { "conv2d_Conv2D6": 'Conv2D', }
-
-
       let receptiveFieldSize = 1; // Initialize the receptive field size
 
-        for (const layer of model.layers) {
-          console.log('layer', layer.constructor.name, layer)
+    for (const layer of model.layers) {
           const layerConfig = layer.getConfig();
 
-          // console.log(layer instanceof tf.conv2d)
-
-          // Calculate the receptive field based on the layer type
-          console.log(layerConfig);
-          //layerNames[layerConfig.name]
           if (layer.constructor.name === 'Conv2D' || layer.constructor.name.includes('Pooling2D')) 
           {
-            const kernelSize = layerConfig['pool_size'];
-            const strides = layerConfig['strides'] || 1;
-            const dilationRate = layerConfig['dilation_rate'] || 1;
+            const kernelSize = layerConfig.kernelSize;
+            const strides = layerConfig.strides || 1;
+            const dilationRate = layerConfig.dilationRate[0] || 1;
 
             receptiveFieldSize += (kernelSize[0] - 1) * dilationRate + 1; // Update receptive field size
 
@@ -147,7 +136,7 @@ function App() {
     } else {
       if (Number(channels) === 2) {
         modelTSP.add(new TSP.layers.GreyscaleInput({shape: [Number(width), Number(width)]}));
-      } else { // Number(channels) === 3
+      } else { 
         modelTSP.add(new TSP.layers.RGBInput({shape: [Number(width), Number(width), 3]}));
       }
     }
@@ -195,7 +184,6 @@ function App() {
   const handleCalculate = () => {
     toast.promise(new Promise((resolve, reject) => {
       try {
-        console.log('LAYERS:');
         const model = makeTFModel();
         const receptiveField = calcReceptiveField(model);
         if (receptiveField!==1) {
@@ -209,7 +197,6 @@ function App() {
         modelTSP.init();
         resolve();
       } catch (err) {
-        console.log(err);
         reject(err.message);
       }
     }), {
@@ -226,7 +213,6 @@ function App() {
         model.save('downloads://my-model');
         resolve();
       } catch (err) {
-        console.log(err);
         reject(err.message);
       }
     }), {
@@ -370,8 +356,9 @@ function App() {
       {output && <div className="output-container">
         Output:
         <br />
-        {output}
+        {output.split('\n').map(s => (<p>{s}</p>))}
       </div>}
+
     </div>
   );
 }
